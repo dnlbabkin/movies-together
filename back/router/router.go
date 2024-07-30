@@ -12,7 +12,8 @@ func Router() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/createRoom", service.CreateRoom).Methods("GET")
-	router.HandleFunc("/joinRoom/{roomID}/{userID}", service.JoinRoom).Methods("GET")
+	router.HandleFunc("/joinRoom/{roomId}/{userId}", service.JoinRoom).Methods("GET")
+	router.HandleFunc("/leaveRoom/{roomId}/{userId}", service.LeaveRoom).Methods("GET")
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"},

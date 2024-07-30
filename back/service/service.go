@@ -58,9 +58,11 @@ func JoinRoom(w http.ResponseWriter, r *http.Request) {
 	room.Users[userId] = conn
 	log.Printf("User %s joined room %s", userId, roomId)
 	defer func() {
-		conn.Close()
-		delete(room.Users, userId)
-		log.Printf("User %s left room %s", userId, roomId)
+		if _, ok := room.Users[userId]; ok {
+			conn.Close()
+			delete(room.Users, userId)
+			log.Printf("User %s left room %s", userId, roomId)
+		}
 	}()
 
 	for {
@@ -78,4 +80,37 @@ func JoinRoom(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+}
+
+func LeaveRoom(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	roomId := vars["roomId"]
+	userId := vars["userId"]
+
+	log.Printf("Attempting to leave room %s by user %s", roomId, userId)
+
+	if roomId == "" || userId == "" {
+		log.Println("leaveRoom: roomID or userID is missing")
+		http.Error(w, "roomID and userID are required", http.StatusBadRequest)
+		return
+	}
+
+	room, exists := rooms[roomId]
+	if !exists {
+		log.Printf("leaveRoom: Room %s not found", roomId)
+		http.Error(w, "Room not found", http.StatusNotFound)
+		return
+	}
+
+	conn, exists := room.Users[userId]
+	if !exists {
+		log.Printf("leaveRoom: User %s not found in room %s", userId, roomId)
+		http.Error(w, "User not found in room", http.StatusNotFound)
+		return
+	}
+
+	conn.Close()
+	delete(room.Users, userId)
+	log.Printf("User %s left room %s", userId, roomId)
+	w.WriteHeader(http.StatusOK)
 }

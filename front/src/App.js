@@ -17,16 +17,17 @@ function App(){
   }, [userId]);
 
   const createRoom = async () => {
-    const response = await fetch(`/createRoom?roomID=${roomId}`,{
-      headers: { 'Content-Type': 'application/json' },
-      credentials: "include"
-    })
-    if (response.ok) {
-      console.log(`Room ${roomId} created`)
-      setJoined(true)
-      localStorage.setItem('roomId', roomId)
-    } else {
-      console.error(`Failed to create room: ${response.statusText}`);
+    try {
+      const response = await fetch(`http://localhost:8080/createRoom?roomId=${roomId}`)
+      if (response.ok) {
+        console.log(`Room ${roomId} created`)
+        setJoined(true);
+        localStorage.setItem("roomId", roomId)
+      } else {
+        console.error(`Failed to create room: ${response.statusText}`)
+      }
+    } catch (error) {
+      console.error("Error creating room:", error)
     }
   }
 
@@ -62,6 +63,25 @@ function App(){
     }
   }
 
+  const leaveRoom = async () => {
+    if (ws.current) {
+      ws.current.close();
+    }
+    try {
+      const response = await fetch(`http://localhost:8080/leaveRoom/${roomId}/${userId}`);
+      if (response.ok) {
+        console.log(`User ${userId} left room ${roomId}`);
+        setJoined(false);
+        setCurrentUrl('');
+        window.location.href = '/';
+      } else {
+        console.error(`Failed to leave room: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error("Error leaving room:", error);
+    }
+  };
+
   return (
       <div className="container">
         {!joined ? (
@@ -87,6 +107,7 @@ function App(){
                     onChange={(e) => setVideoUrl(e.target.value)}
                 />
                 <button onClick={() => sendMessage(videoUrl)}>Отправить ссылку на видео</button>
+                <button onClick={leaveRoom}>Выйти</button>
               </div>
               {currentUrl && (
                   <div className="video-container">
